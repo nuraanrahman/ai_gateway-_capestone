@@ -50,13 +50,14 @@ class OpenAIProvider(ChatProvider):
 
     async def stream(self, request: ChatRequest) -> AsyncIterator[str]:
         client = self._get_client()
-        async with client.chat.completions.stream(
+        response = await client.chat.completions.create(
             model=request.model,
             messages=_to_openai_messages(request.messages),
             max_tokens=request.max_tokens,
             temperature=request.temperature,
-        ) as stream:
-            async for chunk in stream:
-                delta = chunk.choices[0].delta.content if chunk.choices else None
-                if delta:
-                    yield delta
+            stream=True,
+        )
+        async for chunk in response:
+            delta = chunk.choices[0].delta.content if chunk.choices else None
+            if delta:
+                yield delta
